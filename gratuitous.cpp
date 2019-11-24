@@ -1,13 +1,11 @@
-#include "gratuitous.h"
-#include "advancedsearch.h"
+﻿#include "gratuitous.h"
+#include "search.h"
 
 #include <QFileDialog>
-#include <QFileInfo>
 #include <QList>
 #include <QMdiArea>
 #include <QMessageBox>
 #include <QStringList>
-#include <QStandardPaths>
 #include <QtWidgets>
 
 
@@ -15,43 +13,22 @@ Gratuitous::Gratuitous(QWidget *parent)
     : QMainWindow(parent)
 {
     m_mdi_area = new QMdiArea;
+    m_search = new Search(this);
+    m_prefs_dialog = new Prefs(this);
     setCentralWidget(m_mdi_area);
 
-    m_prefs = new Prefs;
-    m_search_dock = new AdvancedSearch(this);
-    addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, m_search_dock);
-    get_default_path();
+    //get_default_path();
     setup_menu_actions();
     add_menus();
     setup_toolbar();
 
+    connect(m_prefs_dialog, &Prefs::settings_applied, this, &Gratuitous::handle_settings_change);
+
+    addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, m_search);
     setWindowTitle("gratuitous");
 }
 
 // Utilities
-void Gratuitous::get_default_path()
-{
-    // TODO: Preferences
-    QString default_path;
-    QStringList config_paths = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation);
-    for (const QString &path : config_paths)
-    {
-        QFileInfo dir(path);
-        if (!dir.exists() || !dir.isDir() || !dir.isWritable())
-            continue;
-
-        dir.setFile(path + "/awesome");
-        if (!dir.exists() || !dir.isDir() || !dir.isWritable())
-            default_path = path;
-        else
-            default_path = path + "/awesome";
-        break;
-    }
-    if (default_path.isEmpty())
-        default_path = QStandardPaths::standardLocations(QStandardPaths::HomeLocation)[0];
-
-    m_default_path = default_path;
-}
 
 void Gratuitous::do_save(LuaEdit *editor)
 {
@@ -63,7 +40,7 @@ void Gratuitous::do_save(LuaEdit *editor)
 
     if (selected_editor->filename().isEmpty())
     {
-        QString filename = QFileDialog::getSaveFileName(this, tr("save as..."), m_default_path); // TODO: prefs
+        QString filename = QFileDialog::getSaveFileName(this, tr("save as..."), m_prefs.value("path").value<QString>());
         if (filename.isEmpty()) return;
         selected_editor->set_filename(filename);
     }
@@ -91,14 +68,14 @@ void Gratuitous::do_save(LuaEdit *editor)
 // File
 void Gratuitous::open()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose file", m_default_path, "*.lua"); // TODO: config
+    QString filename = QFileDialog::getOpenFileName(this, "Choose file", m_prefs.value("path").value<QString>(), "*.lua");
     if (!filename.isEmpty())
         create_new_editor(filename);
 }
 
 void Gratuitous::save_as()
 {
-    QString filename = QFileDialog::getSaveFileName(this, "Save as", m_default_path); // TODO: config
+    QString filename = QFileDialog::getSaveFileName(this, "Save as", m_prefs.value("path").value<QString>());
     if (filename.isEmpty()) return;
     LuaEdit *active_editor = get_active_editor();
     active_editor->set_filename(filename);
@@ -117,6 +94,21 @@ void Gratuitous::save_all()
         do_save(editor);
         editor->document()->setModified(false);
     }
+}
+
+void Gratuitous::revert()
+{
+    LuaEdit *active_editor = get_active_editor();
+    QString filename = active_editor->filename();
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QFile::Text))
+    {
+        QMessageBox::warning(this, "warning", "revert: could not open file: " + file.errorString());
+        return;
+    }
+    QTextStream in(&file);
+    QString text = in.readAll();
+    active_editor->setPlainText(text);
 }
 
 void Gratuitous::exit()
@@ -149,15 +141,15 @@ void Gratuitous::exit()
 // Edit
 void Gratuitous::toggle_search_dock_visible()
 {
-    if (m_search_dock->isVisible())
-        m_search_dock->hide();
+    if (m_search->isVisible())
+        m_search->hide();
     else
-        m_search_dock->show();
+        m_search->show();
 }
 
 void Gratuitous::show_prefs_dialog()
 {
-    m_prefs->show();
+    m_prefs_dialog->show();
 }
 
 // Window
@@ -191,7 +183,7 @@ void Gratuitous::close_window()
 void Gratuitous::show_about()
 {
     QString text = "gratuitous " + VERSION + "\nbrought to you by jaylectric\nhttps://github.com/jaylectric/gratuitous";
-    QMessageBox::about(this, "about gratuitohttps://www.qtcentre.org/threads/23840-how-align-some-buttons-in-QToolbar-from-right-to-leftus", text);
+    QMessageBox::about(this, "about gratuitous", text);
 }
 
 // Other
@@ -203,7 +195,7 @@ void Gratuitous::create_new_editor(QString filename)
     new_window->setAttribute(Qt::WA_DeleteOnClose);
     new_window->setWidget(new_editor);
     new_window->setWindowTitle((new_editor->filename().isEmpty() ? "untitled" + QString::number(editor_count) : new_editor->filename()) + "[*]");
-    m_mdi_area->addSubWindow(new_window)->showMaximized(); // TODO: Preferences
+    m_mdi_area->addSubWindow(new_window)->showMaximized();
 
     // connect the new subwindow to modified slot
     connect(new_editor->document(), &QTextDocument::modificationChanged, this, &Gratuitous::editor_was_modified);
@@ -224,6 +216,16 @@ void Gratuitous::create_new_editor(QString filename)
     connect(action_focus_window, &QAction::triggered, this, focus_window);
     new_editor->set_action(action_focus_window);
     m_mdi_area->setActiveSubWindow(new_window);
+
+    // get editor settings from m_prefs
+    auto *font = new QFont;
+    font->setFamily(m_prefs.value("font/family").value<QString>());
+    font->setPointSize(m_prefs.value("font/size").value<int>());
+    font->setFixedPitch(m_prefs.value("font/fixed").value<bool>());
+    new_editor->setFont(*font);
+
+    bool wordwrap = m_prefs.value("editor/wordwrap").value<bool>();
+    new_editor->setLineWrapMode(wordwrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
 }
 
 void Gratuitous::editor_was_modified(bool changed)
@@ -233,25 +235,59 @@ void Gratuitous::editor_was_modified(bool changed)
     active_editor->parentWidget()->setWindowModified(changed);
 }
 
-void Gratuitous::handle_quick_search()
-{
-    auto active_editor = get_active_editor();
-    const QString query = m_toolbar->findChild<QLineEdit*>()->text();
-    active_editor->find(query);
-}
-
 void Gratuitous::quick_search_next()
 {
-    handle_quick_search();
+    const QString query = m_toolbar->findChild<QLineEdit*>()->text();
+    m_search->quick(query);
 }
 
 void Gratuitous::quick_search_previous()
 {
-    auto active_editor = get_active_editor();
     const QString query = m_toolbar->findChild<QLineEdit*>()->text();
-    active_editor->find(query, QTextDocument::FindBackward);
+    m_search->quick(query, QTextDocument::FindBackward);
 }
 
+void Gratuitous::handle_settings_change()
+{
+    QStringList keys = m_prefs.allKeys();
+    QFont font;
+    bool wordwrap = false;
+    for (auto& key : keys)
+    {
+        if (key.contains("font"))
+        {
+            if (key.contains("family"))
+                font.setFamily(m_prefs.value(key).value<QString>());
+            if (key.contains("size"))
+                font.setPointSize(m_prefs.value(key).value<int>());
+            if (key.contains("fixed"))
+                font.setFixedPitch(m_prefs.value(key).value<bool>());
+        }
+        if (key.contains("editor"))
+        {
+            if (key.contains("wordwrap"))
+                wordwrap = m_prefs.value(key).value<bool>();
+        }
+    }
+
+    change_all_editors(font, wordwrap);
+}
+
+void Gratuitous::change_all_editors(QFont font, bool wordwrap)
+{
+    QList<QMdiSubWindow*> windows = m_mdi_area->subWindowList();
+    for (auto& window : windows)
+    {
+        auto *current_editor = get_editor(window);
+        if (current_editor != nullptr)
+        {
+            current_editor->setFont(font);
+            current_editor->setLineWrapMode(wordwrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+        }
+    }
+}
+
+//
 // UI Setup
 void Gratuitous::setup_menu_actions()
 {
@@ -284,6 +320,11 @@ void Gratuitous::setup_menu_actions()
     action_save_all->setIcon(QIcon::fromTheme("document-save-all"));
     action_save_all->setStatusTip(tr("save all open files"));
     connect(action_save_all, &QAction::triggered, this, &Gratuitous::save_all);
+
+    action_revert = new QAction(tr("revert file"), this);
+    action_revert->setIcon(QIcon::fromTheme("document-revert"));
+    action_revert->setStatusTip(tr("revert selected file to original state."));
+    connect(action_revert, &QAction::triggered, this, &Gratuitous::revert);
 
     action_exit = new QAction(tr("exit"), this);
     action_exit->setIcon(QIcon::fromTheme("application-exit"));
@@ -330,10 +371,22 @@ void Gratuitous::setup_menu_actions()
     action_cascade_windows->setStatusTip(tr("cascade all currently open windows"));
     connect(action_cascade_windows, &QAction::triggered, this, &Gratuitous::cascade_windows);
 
+    action_next_window = new QAction(tr("next window"), this);
+    action_next_window->setIcon(QIcon::fromTheme("go-next"));
+    action_next_window->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Tab));
+    action_next_window->setStatusTip(tr("focus next window"));
+    connect(action_next_window, &QAction::triggered, this, &Gratuitous::next_window);
+
+    action_prev_window = new QAction(tr("previous window"), this);
+    action_prev_window->setIcon(QIcon::fromTheme("go-previous"));
+    action_prev_window->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Tab));
+    action_prev_window->setStatusTip(tr("focus previous window"));
+    connect(action_prev_window, &QAction::triggered, this, &Gratuitous::prev_window);
+
     action_close_window = new QAction(tr("close"), this);
     action_close_window->setIcon(QIcon::fromTheme("window-close"));
-    action_close_window->setShortcut(QKeySequence::Close);
     action_close_window->setStatusTip(tr("close window"));
+    action_close_window->setShortcut(QKeySequence::Close);
     connect(action_close_window, &QAction::triggered, this, &Gratuitous::close_window);
 
     action_close_all_windows = new QAction(tr("close all"), this);
@@ -361,6 +414,7 @@ void Gratuitous::add_menus()
     menu_file->addAction(action_save);
     menu_file->addAction(action_save_as);
     menu_file->addAction(action_save_all);
+    menu_file->addAction(action_revert);
     menu_file->addSeparator();
     menu_file->addAction(action_exit);
 
@@ -377,8 +431,12 @@ void Gratuitous::add_menus()
     menu_window->addAction(action_tile_windows);
     menu_window->addAction(action_cascade_windows);
     menu_window->addSeparator();
+    menu_window->addAction(action_next_window);
+    menu_window->addAction(action_prev_window);
+    menu_window->addSeparator();
     menu_window->addAction(action_close_window);
     menu_window->addAction(action_close_all_windows);
+    menu_window->addSeparator();
 
     menu_help = menuBar()->addMenu(tr("&help"));
     menu_help->addAction(action_show_awesome_docs);
@@ -390,14 +448,21 @@ void Gratuitous::add_menus()
 void Gratuitous::setup_toolbar()
 {
     m_toolbar = new QToolBar;
+    // file
     m_toolbar->addAction(action_new);
     m_toolbar->addAction(action_open);
     m_toolbar->addAction(action_save);
     m_toolbar->addSeparator();
+    // edit
     m_toolbar->addAction(action_show_find_dock);
     m_toolbar->addSeparator();
+    // view
     m_toolbar->addAction(action_show_preview);
     m_toolbar->addAction(action_reload_preview);
+    m_toolbar->addSeparator();
+    // window
+    m_toolbar->addAction(action_prev_window);
+    m_toolbar->addAction(action_next_window);
 
     QWidget *spacer = new QWidget(m_toolbar);
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -405,8 +470,9 @@ void Gratuitous::setup_toolbar()
     m_toolbar->addWidget(spacer);
 
     QLineEdit *quick_search = new QLineEdit(this);
+    quick_search->setMaxLength(50);
     quick_search->setPlaceholderText("quick search...");
-    connect(quick_search, &QLineEdit::returnPressed, this, &Gratuitous::handle_quick_search);
+    connect(quick_search, &QLineEdit::returnPressed, this, &Gratuitous::quick_search_next);
     m_toolbar->addWidget(quick_search);
 
     QAction *action_find_next = new QAction;

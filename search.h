@@ -18,17 +18,19 @@
 #include <QTextDocument>
 #include <QVBoxLayout>
 
-class AdvancedSearch : public QDockWidget
+class Search : public QDockWidget
 {
     Q_OBJECT
 public:
-    AdvancedSearch(QWidget *parent = nullptr, QString title = "advanced search");
+    Search(QWidget *parent = nullptr, QString title = "advanced search");
+    void quick(QString query, QTextDocument::FindFlags flags = nullptr) { Search::do_search(query, flags); }
 
 private:
     //Utilities
     LuaEdit *get_active_editor() { return parent()->findChild<QMdiArea*>()->activeSubWindow()->findChild<LuaEdit*>(); }
-    bool do_search(QString query, QTextDocument::FindFlags flags);
+    bool do_search(QString query, QTextDocument::FindFlags flags = nullptr);
     QTextDocument::FindFlags get_find_flags(bool backward = false);
+
 
 private:
     // UI
@@ -51,12 +53,10 @@ private:
 
     QCheckBox *m_checkbox_case_sensitive;
     QCheckBox *m_checkbox_find_whole_words;
-    QCheckBox *m_bool_global_search;
 
     // State
     bool m_case_sensitive = false;
     bool m_find_whole_words = false;
-    bool m_global_search = false;
 
 private:
     // actions
@@ -76,7 +76,6 @@ protected slots:
     void replace_all();
     void toggle_case_sensitive();
     void toggle_find_whole_words();
-    void toggle_global_search();
 };
 
 #endif // ADVANCEDSEARCH_H

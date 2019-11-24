@@ -22,9 +22,7 @@ public:
 
 private:
     void load_from_file();
-    void setup_appearance();
 private:
-    QWidget *m_parent;
     QString m_filename;
     Highlighter *m_highlighter;
     QAction *m_window_menu_action;

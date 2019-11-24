@@ -16,20 +16,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    advancedsearch.cpp \
     highlighter.cpp \
     luaedit.cpp \
     main.cpp \
     gratuitous.cpp \
-    prefs.cpp
+    prefs.cpp \
+    search.cpp
 
 HEADERS += \
-    advancedsearch.h \
     gratuitous.h \
     highlighter.h \
     luaedit.h \
     palettes.h \
     prefs.h \
+    search.h \
     style.h
 
 # Default rules for deployment.

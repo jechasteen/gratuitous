@@ -3,6 +3,7 @@
 
 #include "luaedit.h"
 #include "prefs.h"
+#include "search.h"
 
 #include <utility>
 
@@ -19,12 +20,13 @@
 #include <QMdiArea>
 #include <QMenu>
 #include <QMenuBar>
+#include <QSettings>
 #include <QString>
 #include <QToolBar>
 #include <QVector>
 #include <QMdiSubWindow>
 
-const QString VERSION = "0.01.00";
+const QString VERSION = "0.0.2";
 
 class Gratuitous : public QMainWindow
 {
@@ -36,8 +38,7 @@ public:
 
 private:
     // Utilities
-    void get_default_path();
-    void do_save(LuaEdit *editor = nullptr);
+    void do_save(LuaEdit* editor = nullptr);
     void new_editor_window(QMdiSubWindow *window);
     void close_editor_window(QMdiSubWindow *window);
     LuaEdit *get_active_editor() { return m_mdi_area->activeSubWindow()->findChild<LuaEdit*>(); }
@@ -46,11 +47,14 @@ private:
     static LuaEdit *get_editor(QMdiSubWindow *window) { return window->findChild<LuaEdit*>(); }
 
     // data
+    QSettings m_prefs;
     QMdiArea *m_mdi_area;
-    QDockWidget *m_search_dock;
+
+    // Widgets
+    Search *m_search;
+    Prefs *m_prefs_dialog;
 
     QString m_default_path;
-    Prefs *m_prefs;
     int editor_count = 0;
 
 private slots:
@@ -60,6 +64,7 @@ private slots:
     void save() { do_save(); }
     void save_as();
     void save_all();
+    void revert();
     void exit();
 
     // Edit Action Slots
@@ -74,6 +79,8 @@ private slots:
     // Window Action Slots
     void tile_windows() { m_mdi_area->tileSubWindows(); }
     void cascade_windows() { m_mdi_area->cascadeSubWindows(); }
+    void next_window() { m_mdi_area->activateNextSubWindow(); }
+    void prev_window() { m_mdi_area->activatePreviousSubWindow(); }
     void close_window();
     void close_all_windows() { m_mdi_area->closeAllSubWindows(); }
 
@@ -83,11 +90,12 @@ private slots:
     void show_about();
 
     // Other slots
-    void create_new_editor(QString filename);
-    void editor_was_modified(bool changed);
-    void handle_quick_search();
+    void create_new_editor(QString);
+    void editor_was_modified(bool);
     void quick_search_next();
     void quick_search_previous();
+    void handle_settings_change();
+    void change_all_editors(QFont, bool);
 
 signals:
     void triggered(QAction *);
@@ -118,6 +126,7 @@ private:
     QAction *action_save;
     QAction *action_save_as;
     QAction *action_save_all;
+    QAction *action_revert;
     QAction *action_exit;
 
     // Edit
@@ -133,6 +142,8 @@ private:
     // Window
     QAction *action_tile_windows;
     QAction *action_cascade_windows;
+    QAction *action_next_window;
+    QAction *action_prev_window;
     QAction *action_select_window;
     QAction *action_close_window;
     QAction *action_close_all_windows;
