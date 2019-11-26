@@ -68,6 +68,9 @@ void Prefs::set_defaults()
 
     // Whether or not to maximize new windows
     m_prefs.setValue("maximize_new", true);
+
+    // Set default auto-reload
+    m_prefs.setValue("preview/autoreload", false);
 }
 
 void Prefs::setup_ui()

@@ -7,7 +7,8 @@
 #include <QMessageBox>
 #include <QStringList>
 #include <QtWidgets>
-
+#include <QWidget>
+#include <QWindow>
 
 Gratuitous::Gratuitous(QWidget *parent)
     : QMainWindow(parent)
@@ -15,6 +16,14 @@ Gratuitous::Gratuitous(QWidget *parent)
     m_mdi_area = new QMdiArea;
     m_search = new Search(this);
     m_prefs_dialog = new Prefs(this);
+    m_preview = new Preview(this);
+
+    connect(m_preview, &Preview::ready,
+            [this]() {
+                qDebug() << "Preview ready";
+            }
+    );
+
     setCentralWidget(m_mdi_area);
 
     //get_default_path();
@@ -59,6 +68,9 @@ void Gratuitous::do_save(LuaEdit *editor)
     selected_editor->parentWidget()->setWindowTitle(selected_editor->filename() + "[*]");
     selected_editor->document()->setModified(false);
     file.close();
+
+    if (m_prefs.value("preview/autoreload").value<bool>() && m_preview->started())
+        m_preview->reload();
 }
 
 /*
@@ -150,6 +162,41 @@ void Gratuitous::toggle_search_dock_visible()
 void Gratuitous::show_prefs_dialog()
 {
     m_prefs_dialog->show();
+}
+
+// View
+void Gratuitous::set_preview_menu_entries()
+{
+    action_start_preview->setVisible(m_preview->started() ? false : true);
+    action_stop_preview->setVisible(m_preview->started() ? true : false);
+}
+
+void Gratuitous::toggle_preview()
+{
+    if (!m_preview->started())
+    {
+        LuaEdit *active_editor = get_active_editor();
+        if (active_editor == nullptr) return;
+
+        m_preview->start(active_editor->filename());
+        set_preview_menu_entries();
+    }
+    else
+    {
+        m_preview->stop();
+        set_preview_menu_entries();
+    }
+    action_reload_preview->setEnabled(!m_preview->started());
+}
+
+void Gratuitous::toggle_auto_reload()
+{
+    m_prefs.setValue("preview/autoreload", action_toggle_auto_reload->isChecked());
+}
+
+void Gratuitous::reload_preview()
+{
+    m_preview->reload();
 }
 
 // Window
@@ -350,16 +397,30 @@ void Gratuitous::setup_menu_actions()
     connect(action_show_prefs_dialog, &QAction::triggered, this, &Gratuitous::show_prefs_dialog);
 
     // View
-    action_show_preview = new QAction(tr("preview..."), this);
-    action_show_preview->setIcon(QIcon::fromTheme("media-playback-start"));
-    action_show_preview->setShortcut(QKeySequence::FullScreen);
-    action_show_preview->setStatusTip(tr("open the preview window"));
-    connect(action_show_preview, &QAction::triggered, this, &Gratuitous::show_preview);
+    action_start_preview = new QAction(tr("start preview..."), this);
+    action_start_preview->setIcon(QIcon::fromTheme("media-playback-start"));
+    action_start_preview->setShortcut(QKeySequence::FullScreen);
+    action_start_preview->setStatusTip(tr("open the preview window"));
+    connect(action_start_preview, &QAction::triggered, this, &Gratuitous::toggle_preview);
+
+    action_stop_preview = new QAction(tr("stop preview..."), this);
+    action_stop_preview->setIcon(QIcon::fromTheme("media-playback-stop"));
+    action_stop_preview->setShortcut(QKeySequence::FullScreen);
+    action_stop_preview->setStatusTip(tr("close the preview window"));
+    action_stop_preview->setVisible(false);
+    connect(action_stop_preview, &QAction::triggered, this, &Gratuitous::toggle_preview);
+
+    action_toggle_auto_reload = new QAction(tr("auto-reload"), this);
+    action_toggle_auto_reload->setIcon(QIcon::fromTheme("object-select"));
+    action_toggle_auto_reload->setStatusTip(tr("toggle auto-reload on save"));
+    action_toggle_auto_reload->setCheckable(true);
+    connect(action_toggle_auto_reload, &QAction::toggled, this, &Gratuitous::toggle_auto_reload);
 
     action_reload_preview = new QAction(tr("reload preview"), this);
     action_reload_preview->setIcon(QIcon::fromTheme("view-refresh"));
-    action_show_preview->setShortcut(QKeySequence::Refresh);
+    action_start_preview->setShortcut(QKeySequence::Refresh);
     action_reload_preview->setStatusTip(tr("send a reload signal to awesome"));
+    action_reload_preview->setEnabled(false);
     connect(action_reload_preview, &QAction::triggered, this, &Gratuitous::reload_preview);
 
     // Window
@@ -424,7 +485,9 @@ void Gratuitous::add_menus()
     menu_edit->addAction(action_show_prefs_dialog);
 
     menu_view = menuBar()->addMenu(tr("&view"));
-    menu_view->addAction(action_show_preview);
+    menu_view->addAction(action_start_preview);
+    menu_view->addAction(action_stop_preview);
+    menu_view->addAction(action_toggle_auto_reload);
     menu_view->addAction(action_reload_preview);
 
     menu_window = menuBar()->addMenu(tr("&window"));
@@ -457,7 +520,9 @@ void Gratuitous::setup_toolbar()
     m_toolbar->addAction(action_show_find_dock);
     m_toolbar->addSeparator();
     // view
-    m_toolbar->addAction(action_show_preview);
+    m_toolbar->addAction(action_start_preview);
+    m_toolbar->addAction(action_stop_preview);
+    m_toolbar->addAction(action_toggle_auto_reload);
     m_toolbar->addAction(action_reload_preview);
     m_toolbar->addSeparator();
     // window

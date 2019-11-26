@@ -2,6 +2,7 @@
 #include "palettes.h"
 
 #include <QApplication>
+#include <QObject>
 #include <QStyleFactory>
 #include <QDebug>
 
@@ -19,5 +20,9 @@ int main(int argc, char *argv[])
 
     Gratuitous w;
     w.show();
+
+    // TODO: fix this garbage, w.quit() should handle everything
+    QObject::connect(&a, &QApplication::aboutToQuit, &w, [&w]() { w.quit(); qDebug() << "force quit"; });
+
     return a.exec();
 }

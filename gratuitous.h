@@ -3,6 +3,7 @@
 
 #include "luaedit.h"
 #include "prefs.h"
+#include "preview.h"
 #include "search.h"
 
 #include <utility>
@@ -36,6 +37,8 @@ public:
     Gratuitous(QWidget *parent = nullptr);
     ~Gratuitous() = default;
 
+    void quit() { m_preview->stop(); }
+
 private:
     // Utilities
     void do_save(LuaEdit* editor = nullptr);
@@ -53,6 +56,7 @@ private:
     // Widgets
     Search *m_search;
     Prefs *m_prefs_dialog;
+    Preview *m_preview;
 
     QString m_default_path;
     int editor_count = 0;
@@ -73,8 +77,10 @@ private slots:
     void show_prefs_dialog();
 
     // View Action Slots
-    void show_preview() {}
-    void reload_preview() {}
+    void toggle_preview();
+    void set_preview_menu_entries();
+    void toggle_auto_reload();
+    void reload_preview();
 
     // Window Action Slots
     void tile_windows() { m_mdi_area->tileSubWindows(); }
@@ -136,7 +142,9 @@ private:
     // TODO: do we want to have cut, copy, paste, etc. in this menu?
 
     // View
-    QAction *action_show_preview;
+    QAction *action_start_preview;
+    QAction *action_stop_preview;
+    QAction *action_toggle_auto_reload;
     QAction *action_reload_preview;
 
     // Window

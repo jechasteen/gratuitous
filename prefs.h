@@ -35,7 +35,6 @@ public slots:
     void do_select_path();
     void do_select_font();
     void do_font_resize(int size);
-    void do_toggle_maximize_new();
 private:
     // ui elements
     QGridLayout *m_layout;

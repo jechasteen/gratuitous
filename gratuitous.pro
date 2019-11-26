@@ -21,6 +21,7 @@ SOURCES += \
     main.cpp \
     gratuitous.cpp \
     prefs.cpp \
+    preview.cpp \
     search.cpp
 
 HEADERS += \
@@ -29,8 +30,8 @@ HEADERS += \
     luaedit.h \
     palettes.h \
     prefs.h \
-    search.h \
-    style.h
+    preview.h \
+    search.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
