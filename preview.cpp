@@ -181,7 +181,9 @@ void Preview::set_win_id()
 QStringList Preview::xephyr_args()
 {
     QStringList args;
-    args << ":1" << "-ac" << "-br" << "-noreset" << "-screen" << "800x600";
+    QString width = QString::number(m_prefs.value("preview/width").value<int>());
+    QString height = QString::number(m_prefs.value("preview/height").value<int>());
+    args << ":1" << "-ac" << "-br" << "-noreset" << "-screen" << width + "x" + height;
     qDebug() << "Arguments passed to Xephyr:\n" << args;
 
     return args;

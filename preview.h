@@ -2,8 +2,9 @@
 #define PREVIEW_H
 
 #include <QDebug>
-#include <QProcess>
 #include <QMdiSubWindow>
+#include <QProcess>
+#include <QSettings>
 
 class Preview : public QObject
 {
@@ -36,6 +37,7 @@ private:
 
     bool m_status;
 
+    QSettings m_prefs;
 
 signals:
     void preview_ended();

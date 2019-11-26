@@ -41,6 +41,7 @@ private:
     QGroupBox *m_group_general;
     QGroupBox *m_group_font;
     QGroupBox *m_group_editor;
+    QGroupBox *m_group_preview;
     QGroupBox *m_group_buttons;
 
     QString get_default_path();
@@ -51,6 +52,7 @@ private:
     void ui_editor_font();
     void ui_general();
     void ui_editor();
+    void ui_preview();
     void ui_buttons();
 
     QSettings m_prefs;

@@ -18,6 +18,8 @@ Gratuitous::Gratuitous(QWidget *parent)
     m_prefs_dialog = new Prefs(this);
     m_preview = new Preview(this);
 
+    // connect to preview ready with a lambda in case we need it
+    // this had been used for attempting to re-parent Xephyr
     connect(m_preview, &Preview::ready,
             [this]() {
                 qDebug() << "Preview ready";
@@ -25,8 +27,9 @@ Gratuitous::Gratuitous(QWidget *parent)
     );
 
     setCentralWidget(m_mdi_area);
+    m_statusbar = new QStatusBar(this);
+    setStatusBar(m_statusbar);
 
-    //get_default_path();
     setup_menu_actions();
     add_menus();
     setup_toolbar();
@@ -200,12 +203,22 @@ void Gratuitous::reload_preview()
 }
 
 // Window
+void Gratuitous::set_window_actions_enabled(bool state)
+{
+    action_close_window->setEnabled(state);
+    action_close_all_windows->setEnabled(state);
+    action_next_window->setEnabled(state);
+    action_prev_window->setEnabled(state);
+}
+
 void Gratuitous::close_window()
 {
     LuaEdit *active_editor = get_active_editor();
+    if (active_editor == nullptr) return;
+
     if (active_editor->document()->isModified())
     {
-        QMessageBox msg;
+        QMessageBox msg(this);
         msg.setText(active_editor->filename() + " has been modified.");
         msg.setInformativeText("Do you want to save the changes?");
         msg.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
@@ -224,8 +237,16 @@ void Gratuitous::close_window()
     //menu_window->removeAction(active_editor->action());
     m_mdi_area->closeActiveSubWindow();
     delete active_editor;
+
+    if (m_mdi_area->subWindowList().length() == 0)
+        set_window_actions_enabled(false);
 }
 
+void Gratuitous::close_all_windows()
+{
+    m_mdi_area->closeAllSubWindows();
+    set_window_actions_enabled(false);
+}
 // Help
 void Gratuitous::show_about()
 {
@@ -260,6 +281,7 @@ void Gratuitous::create_new_editor(QString filename)
                 window->setFocus();
     };
 
+    set_window_actions_enabled(true);
     connect(action_focus_window, &QAction::triggered, this, focus_window);
     new_editor->set_action(action_focus_window);
     m_mdi_area->setActiveSubWindow(new_window);
@@ -379,15 +401,45 @@ void Gratuitous::setup_menu_actions()
     connect(action_exit, &QAction::triggered, this, &Gratuitous::exit);
 
     // Edit
+    action_undo = new QAction(tr("undo"));
+    action_undo->setShortcut(QKeySequence::Undo);
+    action_undo->setIcon(QIcon::fromTheme("edit-undo"));
+    action_undo->setStatusTip(tr("undo last change in active editor"));
+    connect(action_undo, &QAction::triggered, this, &Gratuitous::undo);
+
+    action_redo = new QAction(tr("redo"));
+    action_redo->setShortcut(QKeySequence::Redo);
+    action_redo->setIcon(QIcon::fromTheme("edit-redo"));
+    action_redo->setStatusTip(tr("redo last change in active editor"));
+    connect(action_redo, &QAction::triggered, this, &Gratuitous::redo);
+
+    action_cut = new QAction(tr("cut"));
+    action_cut->setShortcut(QKeySequence::Cut);
+    action_cut->setIcon(QIcon::fromTheme("edit-cut"));
+    action_cut->setStatusTip(tr("cut selected text to clipboard"));
+    connect(action_cut, &QAction::triggered, this, &Gratuitous::cut);
+
+    action_copy = new QAction(tr("copy"));
+    action_copy->setShortcut(QKeySequence::Copy);
+    action_copy->setIcon(QIcon::fromTheme("edit-copy"));
+    action_copy->setStatusTip(tr("copy selected text to clipboard"));
+    connect(action_cut, &QAction::triggered, this, &Gratuitous::copy);
+
+    action_paste = new QAction(tr("paste"));
+    action_paste->setShortcut(QKeySequence::Paste);
+    action_paste->setIcon(QIcon::fromTheme("edit-paste"));
+    action_paste->setStatusTip(tr("paste text from clipboard at cursor position"));
+    connect(action_paste, &QAction::triggered, this, &Gratuitous::paste);
+
     action_focus_quick_find = new QAction(tr("quick find..."));
     action_focus_quick_find->setShortcut(QKeySequence::Find);
     action_focus_quick_find->setIcon(QIcon::fromTheme("edit-find"));
     action_focus_quick_find->setStatusTip(tr("search in the current document"));
     connect(action_focus_quick_find, &QAction::triggered, this, &Gratuitous::focus_quick_find);
 
-    action_show_find_dock = new QAction(tr("advanced search..."), this);
+    action_show_find_dock = new QAction(tr("search and replace..."), this);
     action_show_find_dock->setIcon(QIcon::fromTheme("system-search"));
-    action_show_find_dock->setStatusTip(tr("open the advanced find window"));
+    action_show_find_dock->setStatusTip(tr("open the search and replace dock"));
     connect(action_show_find_dock, &QAction::triggered, this, &Gratuitous::toggle_search_dock_visible);
 
     action_show_prefs_dialog = new QAction(tr("preferences..."), this);
@@ -436,22 +488,26 @@ void Gratuitous::setup_menu_actions()
     action_next_window->setIcon(QIcon::fromTheme("go-next"));
     action_next_window->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Tab));
     action_next_window->setStatusTip(tr("focus next window"));
+    action_next_window->setEnabled(false);
     connect(action_next_window, &QAction::triggered, this, &Gratuitous::next_window);
 
     action_prev_window = new QAction(tr("previous window"), this);
     action_prev_window->setIcon(QIcon::fromTheme("go-previous"));
     action_prev_window->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Tab));
     action_prev_window->setStatusTip(tr("focus previous window"));
+    action_prev_window->setEnabled(false);
     connect(action_prev_window, &QAction::triggered, this, &Gratuitous::prev_window);
 
     action_close_window = new QAction(tr("close"), this);
     action_close_window->setIcon(QIcon::fromTheme("window-close"));
     action_close_window->setStatusTip(tr("close window"));
     action_close_window->setShortcut(QKeySequence::Close);
+    action_close_window->setEnabled(false);
     connect(action_close_window, &QAction::triggered, this, &Gratuitous::close_window);
 
     action_close_all_windows = new QAction(tr("close all"), this);
     action_close_all_windows->setStatusTip(tr("close all open windows"));
+    action_close_all_windows->setEnabled(false);
     connect(action_close_all_windows, &QAction::triggered, this, &Gratuitous::close_all_windows);
 
     // Help
@@ -480,6 +536,13 @@ void Gratuitous::add_menus()
     menu_file->addAction(action_exit);
 
     menu_edit = menuBar()->addMenu(tr("&edit"));
+    menu_edit->addAction(action_undo);
+    menu_edit->addAction(action_redo);
+    menu_edit->addSeparator();
+    menu_edit->addAction(action_cut);
+    menu_edit->addAction(action_copy);
+    menu_edit->addAction(action_paste);
+    menu_edit->addSeparator();
     menu_edit->addAction(action_show_find_dock);
     menu_edit->addAction(action_focus_quick_find);
     menu_edit->addAction(action_show_prefs_dialog);

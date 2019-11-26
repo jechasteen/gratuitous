@@ -4,12 +4,13 @@
 
 ## Bugs
 
-* Awesome commang shift+mod+c closes modified file without asking!
+* ~~Awesome command shift+mod+c closes modified file without asking!~~
 
 ## General Features
 
 * Line numbering
 * Tiled windows should optionally resize together
+* Status bar with ~~status text~~ and current line/column number
 
 ## General Changes
 
@@ -26,10 +27,15 @@
 
 ## *Edit* features
 
-### Editor commands
+### Commands
 
-* Find out if it is considered best practice to include cut/copy/paste/etc.
+* ~~Find out if it is considered best practice to include cut/copy/paste/etc.~~
 * Look at other popular editors/IDEs for feature-completeness
+
+### Features
+	- Select All/None
+	- Go to line
+	- Display line number in status bar 
 
 ### Search
 
@@ -54,14 +60,16 @@
 ### Preview
 
 * Find out if Xephyr can reparent to a QMdiSubWindow, or maybe we can reparent to a top-level window and then 'demote' to a subwindow
-* Implement Xephyr start/stop, awesome start/stop, and awesome SIGHUP (reload)
-* Implement auto-reload on save and add a checkbox to the menu and toolbar
+* ~~Implement Xephyr start/stop, awesome start/stop, and awesome SIGHUP (reload)~~
+* ~~Implement auto-reload on save and add a checkbox to the menu and toolbar~~
+* ~~Add preview window size to preferences and pass it when starting Xephyr~~
 
 ## *Window* features
 
 * ~~Create a separator between window actions and the list of open editors~~
 * ~~Bind next/previous QMdiSubWindow keysequences~~
 * ~~Toggle tile horizontal/vertical~~ not supported :(
+* ~~Toggle enabled/disabled window menu controls if there are editors open~~
 
 ## *Help* features
 

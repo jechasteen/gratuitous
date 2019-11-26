@@ -17,6 +17,7 @@ Search::Search(QWidget *parent, QString title)
 bool Search::do_search(QString query, QTextDocument::FindFlags flags)
 {
     auto *active_editor = get_active_editor();
+    if (active_editor == nullptr) return false;
     QTextCursor cursor = active_editor->textCursor();
     auto cursor_original = cursor;
     if (!active_editor->find(query, flags))
@@ -62,6 +63,8 @@ void Search::search_previous()
 
 void Search::replace()
 {
+    if (get_active_editor() == nullptr) return;
+
     QTextCursor cursor = get_active_editor()->textCursor();
     if (cursor.hasSelection())
         cursor.insertText(m_replace_line->text());
@@ -69,6 +72,8 @@ void Search::replace()
 
 void Search::replace_all()
 {
+    if (get_active_editor() == nullptr) return;
+
     int res = QMessageBox::warning(this, "warning", "are you sure you want to replace all instances?", QMessageBox::Ok | QMessageBox::Cancel);
     if (res == QMessageBox::Ok)
     {
@@ -115,11 +120,9 @@ void Search::setup_actions()
 
     action_toggle_case_sensitive = new QAction(tr("case-sensitive"));
     action_toggle_case_sensitive->setStatusTip(tr("search using case-sensitive query"));
-    //connect(action_toggle_case_sensitive, &QAction::triggered, this, &AdvancedSearch::toggle_case_sensitive);
 
     action_toggle_find_whole_words = new QAction(tr("find whole words"));
     action_toggle_find_whole_words->setStatusTip(tr("search whole word matches only"));
-    //connect(action_toggle_find_whole_words, &QAction::triggered, this, &AdvancedSearch::toggle_find_whole_words);
 }
 
 void Search::setup_ui()
@@ -187,7 +190,6 @@ void Search::setup_ui()
     m_vertical_layout->addLayout(m_search_layout);
     m_vertical_layout->addLayout(m_replace_layout);
     m_vertical_layout->addLayout(m_options_layout);
-    //m_vertical_layout->setSizeConstraint(QLayout::SetFixedSize);
     m_vertical_layout->addStretch(1);
 
     m_widget->setLayout(m_vertical_layout);

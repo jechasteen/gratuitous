@@ -1,5 +1,5 @@
-#ifndef ADVANCEDSEARCH_H
-#define ADVANCEDSEARCH_H
+#ifndef SEARCH_H
+#define SEARCH_H
 
 #include "luaedit.h"
 
@@ -22,7 +22,7 @@ class Search : public QDockWidget
 {
     Q_OBJECT
 public:
-    Search(QWidget *parent = nullptr, QString title = "advanced search");
+    Search(QWidget *parent = nullptr, QString title = "search and replace");
     void quick(QString query, QTextDocument::FindFlags flags = nullptr) { Search::do_search(query, flags); }
 
 private:
@@ -78,4 +78,4 @@ protected slots:
     void toggle_find_whole_words();
 };
 
-#endif // ADVANCEDSEARCH_H
+#endif // SEARCH_H

@@ -22,6 +22,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
+#include <QStatusBar>
 #include <QString>
 #include <QToolBar>
 #include <QVector>
@@ -42,7 +43,7 @@ public:
 private:
     // Utilities
     void do_save(LuaEdit* editor = nullptr);
-    void new_editor_window(QMdiSubWindow *window);
+    // void new_editor_window(QMdiSubWindow *window);
     void close_editor_window(QMdiSubWindow *window);
     LuaEdit *get_active_editor() { return m_mdi_area->activeSubWindow()->findChild<LuaEdit*>(); }
     static bool match_editor(QMdiSubWindow *window, QString filename) { return window->findChild<LuaEdit*>()->filename() == filename; }
@@ -57,11 +58,14 @@ private:
     Search *m_search;
     Prefs *m_prefs_dialog;
     Preview *m_preview;
+    QStatusBar *m_statusbar;
 
     QString m_default_path;
     int editor_count = 0;
 
 private slots:
+    void closeEvent(QCloseEvent *event) { exit(); event->accept(); }
+
     // File Action Slots
     void new_file() { ++editor_count; create_new_editor(""); }
     void open();
@@ -72,6 +76,11 @@ private slots:
     void exit();
 
     // Edit Action Slots
+    void undo() { get_active_editor()->undo(); }
+    void redo() { get_active_editor()->redo(); }
+    void cut() { get_active_editor()->cut(); }
+    void copy() { get_active_editor()->copy(); }
+    void paste() { get_active_editor()->paste(); }
     void toggle_search_dock_visible();
     void focus_quick_find() { m_toolbar->findChild<QLineEdit*>()->setFocus(); }
     void show_prefs_dialog();
@@ -87,8 +96,9 @@ private slots:
     void cascade_windows() { m_mdi_area->cascadeSubWindows(); }
     void next_window() { m_mdi_area->activateNextSubWindow(); }
     void prev_window() { m_mdi_area->activatePreviousSubWindow(); }
+    void set_window_actions_enabled(bool state);
     void close_window();
-    void close_all_windows() { m_mdi_area->closeAllSubWindows(); }
+    void close_all_windows();
 
     // Help Action Slots
     static void show_awesome_docs() { QDesktopServices::openUrl(QUrl("https://awesomewm.org/doc/api")); }
@@ -136,10 +146,14 @@ private:
     QAction *action_exit;
 
     // Edit
+    QAction *action_undo;
+    QAction *action_redo;
+    QAction *action_cut;
+    QAction *action_copy;
+    QAction *action_paste;
     QAction *action_show_find_dock;
     QAction *action_focus_quick_find;
     QAction *action_show_prefs_dialog;
-    // TODO: do we want to have cut, copy, paste, etc. in this menu?
 
     // View
     QAction *action_start_preview;

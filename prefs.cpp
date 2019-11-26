@@ -1,5 +1,6 @@
 #include "prefs.h"
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QFileInfo>
 #include <QFileDialog>
@@ -9,8 +10,11 @@
 #include <QLayout>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QScreen>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QStandardPaths>
+
 
 Prefs::Prefs(QWidget *parent) : QDialog(parent)
 {
@@ -22,7 +26,6 @@ Prefs::Prefs(QWidget *parent) : QDialog(parent)
     setLayout(m_layout);
     layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
-
 
 QString Prefs::get_default_path()
 {
@@ -71,6 +74,10 @@ void Prefs::set_defaults()
 
     // Set default auto-reload
     m_prefs.setValue("preview/autoreload", false);
+
+    // Set default preview window size
+    m_prefs.setValue("preview/width", 800);
+    m_prefs.setValue("preview/height", 600);
 }
 
 void Prefs::setup_ui()
@@ -79,10 +86,12 @@ void Prefs::setup_ui()
 
     ui_general();
     ui_editor();
+    ui_preview();
     ui_buttons();
 
     m_layout->addWidget(m_group_general);
     m_layout->addWidget(m_group_editor);
+    m_layout->addWidget(m_group_preview);
     m_layout->addWidget(m_group_buttons);
 }
 
@@ -147,6 +156,42 @@ void Prefs::ui_editor()
     m_group_editor->setLayout(editor_layout);
 }
 
+void Prefs::ui_preview()
+{
+    m_group_preview = new QGroupBox(tr("preview"));
+    auto *preview_layout = new QVBoxLayout;
+
+    QSize display_size = QApplication::screens()[0]->size();
+    QSizePolicy *spinbox_policy = new QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    auto *preview_size_group = new QGroupBox(tr("xephyr size"));
+    auto *preview_size_layout = new QHBoxLayout;
+    preview_size_layout->setSpacing(0);
+    auto *preview_size_width = new QSpinBox(this);
+    preview_size_width->setRange(1, display_size.width());
+    preview_size_width->setSingleStep(1);
+    preview_size_width->setValue(m_prefs.value("preview/width").value<int>());
+    preview_size_width->setSizePolicy(*spinbox_policy);
+    preview_size_width->setAlignment(Qt::AlignCenter);
+    auto *preview_x = new QLabel(this);
+    preview_x->setText("WIDTH x HEIGHT");
+    auto *preview_size_height = new QSpinBox(this);
+    preview_size_height->setRange(1, display_size.height());
+    preview_size_height->setSingleStep(1);
+    preview_size_height->setValue(m_prefs.value("preview/height").value<int>());
+    preview_size_height->setSizePolicy(*spinbox_policy);
+    preview_size_height->setAlignment(Qt::AlignCenter);
+
+    preview_size_layout->addWidget(preview_size_width);
+    preview_size_layout->addWidget(preview_x);
+    preview_size_layout->addWidget(preview_size_height);
+    preview_size_layout->setSpacing(10);
+
+    preview_size_group->setLayout(preview_size_layout);
+    preview_layout->addWidget(preview_size_group);
+    m_group_preview->setLayout(preview_layout);
+}
+
 void Prefs::ui_buttons()
 {
     m_group_buttons = new QGroupBox;
@@ -196,6 +241,10 @@ void Prefs::do_apply()
 {
     set_font(m_group_font->findChild<QLineEdit*>()->font());
     m_prefs.setValue("editor/wordwrap", m_group_editor->findChild<QCheckBox*>()->isChecked());
+
+    m_prefs.setValue("preview/width", m_group_preview->findChildren<QSpinBox*>()[0]->value());
+    m_prefs.setValue("preview/height", m_group_preview->findChildren<QSpinBox*>()[1]->value());
+
     emit settings_applied();
 }
 
