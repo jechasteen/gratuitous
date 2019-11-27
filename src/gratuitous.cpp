@@ -10,7 +10,7 @@
 #include <QWidget>
 #include <QWindow>
 
-Gratuitous::Gratuitous(QWidget *parent)
+Gratuitous::Gratuitous(QWidget *parent, QString arg)
     : QMainWindow(parent)
 {
     m_mdi_area = new QMdiArea;
@@ -38,6 +38,11 @@ Gratuitous::Gratuitous(QWidget *parent)
 
     addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, m_search);
     setWindowTitle("gratuitous");
+
+    show();
+
+    if (!arg.isEmpty())
+        create_new_editor(arg);
 }
 
 // Utilities
@@ -258,7 +263,14 @@ void Gratuitous::show_about()
 void Gratuitous::create_new_editor(QString filename)
 {
     auto *new_window = new QMdiSubWindow;
-    auto *new_editor = new LuaEdit(new_window, std::move(filename));
+    LuaEdit *new_editor;
+    try {
+       new_editor = new LuaEdit(new_window, filename);
+    }  catch (QString e) {
+        qDebug() << "Gratuitous::create_new_editor():" << e;
+        delete new_window;
+        return;
+    }
 
     new_window->setAttribute(Qt::WA_DeleteOnClose);
     new_window->setWidget(new_editor);
@@ -281,8 +293,9 @@ void Gratuitous::create_new_editor(QString filename)
                 window->setFocus();
     };
 
-    set_window_actions_enabled(true);
     connect(action_focus_window, &QAction::triggered, this, focus_window);
+
+    set_window_actions_enabled(true);
     new_editor->set_action(action_focus_window);
     m_mdi_area->setActiveSubWindow(new_window);
 

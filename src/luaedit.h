@@ -10,6 +10,8 @@
 #include <QString>
 #include <QTextEdit>
 
+const QString GEMPTYFILE = "EMPTYFILE";
+
 class LuaEdit : public QTextEdit
 {
     Q_OBJECT
@@ -21,7 +23,7 @@ public:
     void set_action(QAction *action) { m_window_menu_action = action; }
 
 private:
-    void load_from_file();
+    bool load_from_file();
 private:
     QString m_filename;
     Highlighter *m_highlighter;

@@ -24,6 +24,7 @@
 * Recent Files
 * Open folder? We will probably need to implement some sort of file tree for this to be feasible
 * ~~Revert file is a MUST~~
+* ~~Open file with command line argument, e.g. `gratuitous ~/.config/awesome/rc.lua`~~
 
 ## *Edit* features
 

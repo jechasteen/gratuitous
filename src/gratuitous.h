@@ -28,14 +28,14 @@
 #include <QVector>
 #include <QMdiSubWindow>
 
-const QString VERSION = "0.0.2";
+const QString VERSION = "0.1.0";
 
 class Gratuitous : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    Gratuitous(QWidget *parent = nullptr);
+    Gratuitous(QWidget *parent = nullptr, QString filename = "");
     ~Gratuitous() = default;
 
     void quit() { m_preview->stop(); }
@@ -67,7 +67,7 @@ private slots:
     void closeEvent(QCloseEvent *event) { exit(); event->accept(); }
 
     // File Action Slots
-    void new_file() { ++editor_count; create_new_editor(""); }
+    void new_file() { ++editor_count; create_new_editor(GEMPTYFILE); }
     void open();
     void save() { do_save(); }
     void save_as();

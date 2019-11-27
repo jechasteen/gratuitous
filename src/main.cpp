@@ -18,8 +18,15 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationDomain("jechasteen.com");
     QCoreApplication::setApplicationName("gratuitous");
 
-    Gratuitous w;
-    w.show();
+    QString arg = "";
+
+    if (argc == 2)
+    {
+        arg = QString(argv[1]);
+    }
+
+    Gratuitous w(nullptr, arg);
+    //w.show();
 
     // TODO: fix this garbage, w.quit() should handle everything
     QObject::connect(&a, &QApplication::aboutToQuit, &w, [&w]() { w.quit(); qDebug() << "force quit"; });
