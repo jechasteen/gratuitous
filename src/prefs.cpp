@@ -66,6 +66,9 @@ void Prefs::set_defaults()
     // Word wrap
     m_prefs.setValue("editor/wordwrap", false);
 
+    // Tabstop distance
+    m_prefs.setValue("editor/tabstop", 4);
+
     // Default path, for file dialog open location
     m_prefs.setValue("path", get_default_path());
 
@@ -151,7 +154,18 @@ void Prefs::ui_editor()
     editor_wordwrap->setChecked(m_prefs.value("editor/wordwrap").value<bool>());
     editor_layout->addWidget(editor_wordwrap);
 
+    auto *group_editor_tabstop = new QGroupBox(tr("tabstop"));
+    auto *editor_tabstop_layout = new QHBoxLayout;
+    auto *editor_tabstop = new QSpinBox(this);
+    editor_tabstop->setRange(1,100);
+    editor_tabstop->setSingleStep(1);
+    editor_tabstop->setValue(m_prefs.value("editor/tabstop").value<int>());
+    editor_tabstop_layout->addWidget(editor_tabstop);
+    group_editor_tabstop->setLayout(editor_tabstop_layout);
+    editor_layout->addWidget(group_editor_tabstop);
+
     ui_editor_font();
+
     editor_layout->addWidget(m_group_font);
     m_group_editor->setLayout(editor_layout);
 }
@@ -241,6 +255,7 @@ void Prefs::do_apply()
 {
     set_font(m_group_font->findChild<QLineEdit*>()->font());
     m_prefs.setValue("editor/wordwrap", m_group_editor->findChild<QCheckBox*>()->isChecked());
+    m_prefs.setValue("editor/tabstop", m_group_editor->findChild<QSpinBox*>()->value());
 
     m_prefs.setValue("preview/width", m_group_preview->findChildren<QSpinBox*>()[0]->value());
     m_prefs.setValue("preview/height", m_group_preview->findChildren<QSpinBox*>()[1]->value());

@@ -5,6 +5,11 @@
 ## Bugs
 
 * ~~Awesome command shift+mod+c closes modified file without asking!~~
+* ~~The fixed-width font doesn't seem to exactly be fixed with with tab characters used, ensure this is fixed when 'tabstop' is implemented!~~
+* Highlighting of strings is borked, e.g. "blah blah blah", blah = "blah blah" is all highlighted
+* Highlighter doesn't catch single-quoted strings (how does lua treat single quoted strings anyway?)
+* ~~The reload button never becomes activated when starting the preview~~
+* ~~Cascade mode makes tiny windows, these should probably be as big as the area will allow~~
 
 ## General Features
 
@@ -37,6 +42,9 @@
 	- Select All/None
 	- Go to line
 	- Display line number in status bar 
+	- Highlight current line
+	- Smart indentation
+	- Auto-complete braces, parens, etc.
 
 ### Search
 
@@ -55,6 +63,8 @@
 	- Use QSettings
 	- Do we support system-wide AND user preferences?
 * ~~Replace all prefs TODOs in the code~~
+* ~~Enable tabstop size~~
+* Enable tabs to spaces
 
 ## *View* features
 

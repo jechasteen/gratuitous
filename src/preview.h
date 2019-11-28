@@ -16,11 +16,8 @@ public:
     void stop();
     void reload();
     void reload(QString);
-    QMdiSubWindow *window() { return m_window; }
 
     bool started() { return m_status; }
-    QString get_win_id() const { return m_win_id; }
-    void set_win_id();
 
 private:
     QString m_xephyr_command = "/usr/bin/Xephyr";
@@ -32,15 +29,12 @@ private:
     QProcess *m_awesome_process;
     QProcess *m_id_process;
 
-    QMdiSubWindow *m_window;
-    QString m_win_id;
-
     bool m_status;
 
     QSettings m_prefs;
 
 signals:
-    void preview_ended();
+    void ended();
     void ready();
 };
 

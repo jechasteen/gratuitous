@@ -22,13 +22,14 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
+#include <QSize>
 #include <QStatusBar>
 #include <QString>
 #include <QToolBar>
 #include <QVector>
 #include <QMdiSubWindow>
 
-const QString VERSION = "0.1.0";
+const QString VERSION = "0.1.1";
 
 class Gratuitous : public QMainWindow
 {
@@ -93,7 +94,7 @@ private slots:
 
     // Window Action Slots
     void tile_windows() { m_mdi_area->tileSubWindows(); }
-    void cascade_windows() { m_mdi_area->cascadeSubWindows(); }
+    void cascade_windows();
     void next_window() { m_mdi_area->activateNextSubWindow(); }
     void prev_window() { m_mdi_area->activatePreviousSubWindow(); }
     void set_window_actions_enabled(bool state);
@@ -111,7 +112,6 @@ private slots:
     void quick_search_next();
     void quick_search_previous();
     void handle_settings_change();
-    void change_all_editors(QFont, bool);
 
 signals:
     void triggered(QAction *);

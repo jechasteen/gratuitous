@@ -23,8 +23,16 @@ Gratuitous::Gratuitous(QWidget *parent, QString arg)
     connect(m_preview, &Preview::ready,
             [this]() {
                 qDebug() << "Preview ready";
+                set_preview_menu_entries();
             }
     );
+
+    connect(m_preview, &Preview::ended,
+            [this](){
+                qDebug() << "Preview ended";
+                m_preview = new Preview(this);
+                set_preview_menu_entries();
+    });
 
     setCentralWidget(m_mdi_area);
     m_statusbar = new QStatusBar(this);
@@ -175,8 +183,10 @@ void Gratuitous::show_prefs_dialog()
 // View
 void Gratuitous::set_preview_menu_entries()
 {
-    action_start_preview->setVisible(m_preview->started() ? false : true);
-    action_stop_preview->setVisible(m_preview->started() ? true : false);
+    bool started = m_preview->started();
+    action_start_preview->setVisible(started ? false : true);
+    action_stop_preview->setVisible(started ? true : false);
+    action_reload_preview->setVisible(started ? true : false);
 }
 
 void Gratuitous::toggle_preview()
@@ -187,14 +197,13 @@ void Gratuitous::toggle_preview()
         if (active_editor == nullptr) return;
 
         m_preview->start(active_editor->filename());
-        set_preview_menu_entries();
+        //set_preview_menu_entries();
     }
     else
     {
         m_preview->stop();
-        set_preview_menu_entries();
+        //set_preview_menu_entries();
     }
-    action_reload_preview->setEnabled(!m_preview->started());
 }
 
 void Gratuitous::toggle_auto_reload()
@@ -207,7 +216,20 @@ void Gratuitous::reload_preview()
     m_preview->reload();
 }
 
+#include <cmath>
+
 // Window
+void Gratuitous::cascade_windows() {
+    m_mdi_area->cascadeSubWindows();
+    for (auto& window : m_mdi_area->subWindowList())
+    {
+        QSize mdi_size = m_mdi_area->size();
+        int x = floor(mdi_size.width() * 0.75);
+        int y = floor(mdi_size.height() * 0.75);
+        window->resize(x, y);
+    }
+}
+
 void Gratuitous::set_window_actions_enabled(bool state)
 {
     action_close_window->setEnabled(state);
@@ -259,6 +281,8 @@ void Gratuitous::show_about()
     QMessageBox::about(this, "about gratuitous", text);
 }
 
+#include <QFontMetrics>
+
 // Other
 void Gratuitous::create_new_editor(QString filename)
 {
@@ -308,6 +332,9 @@ void Gratuitous::create_new_editor(QString filename)
 
     bool wordwrap = m_prefs.value("editor/wordwrap").value<bool>();
     new_editor->setLineWrapMode(wordwrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+
+    QFontMetrics metrics(*font);
+    new_editor->setTabStopDistance(metrics.horizontalAdvance("x") * m_prefs.value("editor/tabstop").value<int>());
 }
 
 void Gratuitous::editor_was_modified(bool changed)
@@ -333,7 +360,7 @@ void Gratuitous::handle_settings_change()
 {
     QStringList keys = m_prefs.allKeys();
     QFont font;
-    bool wordwrap = false;
+
     for (auto& key : keys)
     {
         if (key.contains("font"))
@@ -345,26 +372,18 @@ void Gratuitous::handle_settings_change()
             if (key.contains("fixed"))
                 font.setFixedPitch(m_prefs.value(key).value<bool>());
         }
-        if (key.contains("editor"))
-        {
-            if (key.contains("wordwrap"))
-                wordwrap = m_prefs.value(key).value<bool>();
-        }
     }
 
-    change_all_editors(font, wordwrap);
-}
-
-void Gratuitous::change_all_editors(QFont font, bool wordwrap)
-{
     QList<QMdiSubWindow*> windows = m_mdi_area->subWindowList();
     for (auto& window : windows)
     {
         auto *current_editor = get_editor(window);
         if (current_editor != nullptr)
         {
+            auto metrics = QFontMetrics(font);
             current_editor->setFont(font);
-            current_editor->setLineWrapMode(wordwrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+            current_editor->setLineWrapMode(m_prefs.value("editor/wordwrap").value<bool>() ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+            current_editor->setTabStopDistance(metrics.horizontalAdvance("x") * m_prefs.value("editor/tabstop").value<int>());
         }
     }
 }
@@ -485,7 +504,7 @@ void Gratuitous::setup_menu_actions()
     action_reload_preview->setIcon(QIcon::fromTheme("view-refresh"));
     action_start_preview->setShortcut(QKeySequence::Refresh);
     action_reload_preview->setStatusTip(tr("send a reload signal to awesome"));
-    action_reload_preview->setEnabled(false);
+    action_reload_preview->setVisible(false);
     connect(action_reload_preview, &QAction::triggered, this, &Gratuitous::reload_preview);
 
     // Window

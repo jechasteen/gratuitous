@@ -12,35 +12,16 @@
 #include <QMainWindow>
 #include <QObject>
 #include <QProcessEnvironment>
+#include <QtGlobal>
 #include <QStringList>
 #include <QWindow>
 
 Preview::Preview(QObject *parent)
     : QObject(parent)
 {
-    m_xephyr_process = new QProcess;
-    m_awesome_process = new QProcess;
-
-    QStringList awesome_args;
+    m_xephyr_process = new QProcess(this);
+    m_awesome_process = new QProcess(this);
     m_status = false;
-
-    connect(m_xephyr_process,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [=](int exit_code, QProcess::ExitStatus exit_status) {
-                qDebug() << "Xephyr quit.\nExit Code" << exit_code << "\nExit status:" << exit_status;
-                m_awesome_process->kill();
-                emit preview_ended();
-            }
-    );
-
-    connect(m_awesome_process,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [=](int exit_code, QProcess::ExitStatus exitStatus){
-                qDebug() << "Awesome quit.\nExit code:" << exit_code << "\nExit status:" << exitStatus;
-                m_xephyr_process->kill();
-                emit preview_ended();
-            }
-    );
 
     connect(m_xephyr_process,
             &QProcess::readyReadStandardOutput,
@@ -116,7 +97,7 @@ void Preview::stop()
     m_status = false;
     delete m_xephyr_process;
     delete m_awesome_process;
-    emit preview_ended();
+    emit ended();
 }
 
 void Preview::reload()
@@ -168,14 +149,6 @@ QString exec(const char* command)
         count++;
     }
     return result;
-}
-
-void Preview::set_win_id()
-{
-    const char command[] = "/etc/gratuitous/get_preview_id.sh";
-    QString id = exec(command);
-    m_win_id = id.trimmed();
-    qDebug() << "Preview window id:" << m_win_id;
 }
 
 QStringList Preview::xephyr_args()
