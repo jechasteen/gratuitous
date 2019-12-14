@@ -69,6 +69,9 @@ void Prefs::set_defaults()
     // Tabstop distance
     m_prefs.setValue("editor/tabstop", 4);
 
+    // Line numbers
+    m_prefs.setValue("editor/linenumbers", false);
+
     // Default path, for file dialog open location
     m_prefs.setValue("path", get_default_path());
 
@@ -150,9 +153,17 @@ void Prefs::ui_editor()
     m_group_editor = new QGroupBox(tr("editor"));
     auto *editor_layout = new QVBoxLayout;
 
+    auto *editor_booleans = new QHBoxLayout;
+
     auto *editor_wordwrap = new QCheckBox(tr("word wrap"), this);
     editor_wordwrap->setChecked(m_prefs.value("editor/wordwrap").value<bool>());
-    editor_layout->addWidget(editor_wordwrap);
+    editor_wordwrap->setObjectName("wordwrap");
+    editor_booleans->addWidget(editor_wordwrap);
+
+    auto *editor_linenumbers = new QCheckBox(tr("line numbers"), this);
+    editor_linenumbers->setChecked(m_prefs.value("editor/linenumbers").value<bool>());
+    editor_linenumbers->setObjectName("linenumbers");
+    editor_booleans->addWidget(editor_linenumbers);
 
     auto *group_editor_tabstop = new QGroupBox(tr("tabstop"));
     auto *editor_tabstop_layout = new QHBoxLayout;
@@ -166,6 +177,7 @@ void Prefs::ui_editor()
 
     ui_editor_font();
 
+    editor_layout->addLayout(editor_booleans);
     editor_layout->addWidget(m_group_font);
     m_group_editor->setLayout(editor_layout);
 }
@@ -254,7 +266,8 @@ void Prefs::change_font_display(QFont font)
 void Prefs::do_apply()
 {
     set_font(m_group_font->findChild<QLineEdit*>()->font());
-    m_prefs.setValue("editor/wordwrap", m_group_editor->findChild<QCheckBox*>()->isChecked());
+    m_prefs.setValue("editor/wordwrap", m_group_editor->findChild<QCheckBox*>("wordwrap")->isChecked());
+    m_prefs.setValue("editor/linenumbers", m_group_editor->findChild<QCheckBox*>("linenumbers")->isChecked());
     m_prefs.setValue("editor/tabstop", m_group_editor->findChild<QSpinBox*>()->value());
 
     m_prefs.setValue("preview/width", m_group_preview->findChildren<QSpinBox*>()[0]->value());

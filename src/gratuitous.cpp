@@ -383,7 +383,9 @@ void Gratuitous::handle_settings_change()
             auto metrics = QFontMetrics(font);
             current_editor->setFont(font);
             current_editor->setLineWrapMode(m_prefs.value("editor/wordwrap").value<bool>() ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+            current_editor->reset_line_number_area_width();
             current_editor->setTabStopDistance(metrics.horizontalAdvance("x") * m_prefs.value("editor/tabstop").value<int>());
+            current_editor->repaint();
         }
     }
 }
