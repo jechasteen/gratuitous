@@ -331,7 +331,7 @@ void Gratuitous::create_new_editor(QString filename)
     new_editor->setFont(*font);
 
     bool wordwrap = m_prefs.value("editor/wordwrap").value<bool>();
-    new_editor->setLineWrapMode(wordwrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+    new_editor->setLineWrapMode(wordwrap ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
 
     QFontMetrics metrics(*font);
     new_editor->setTabStopDistance(metrics.horizontalAdvance("x") * m_prefs.value("editor/tabstop").value<int>());
@@ -382,7 +382,7 @@ void Gratuitous::handle_settings_change()
         {
             auto metrics = QFontMetrics(font);
             current_editor->setFont(font);
-            current_editor->setLineWrapMode(m_prefs.value("editor/wordwrap").value<bool>() ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+            current_editor->setLineWrapMode(m_prefs.value("editor/wordwrap").value<bool>() ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
             current_editor->setTabStopDistance(metrics.horizontalAdvance("x") * m_prefs.value("editor/tabstop").value<int>());
         }
     }

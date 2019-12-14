@@ -8,11 +8,11 @@
 #include <QAction>
 #include <QDebug>
 #include <QString>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 
 const QString GEMPTYFILE = "EMPTYFILE";
 
-class LuaEdit : public QTextEdit
+class LuaEdit : public QPlainTextEdit
 {
     Q_OBJECT
 public:

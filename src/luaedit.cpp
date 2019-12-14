@@ -8,7 +8,7 @@
 #include <QTextStream>
 
 LuaEdit::LuaEdit(QWidget *parent, QString filename)
-    : QTextEdit(parent)
+    : QPlainTextEdit(parent)
 {
     m_filename = std::move(filename);
     m_highlighter = new Highlighter(document());
@@ -30,7 +30,8 @@ bool LuaEdit::load_from_file()
         {
             QTextStream in(&file);
             QString text = in.readAll();
-            setText(text);
+            document()->setPlainText(text);
+            //setText(text);
             return true;
         }
         else
