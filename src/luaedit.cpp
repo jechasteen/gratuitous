@@ -84,7 +84,7 @@ void LuaEdit::highlight_current_line()
 {
     QList<QTextEdit::ExtraSelection> extra_selections;
 
-    if (!isReadOnly())
+    if (!isReadOnly() && m_prefs.value("editor/highlight").value<bool>())
     {
         QTextEdit::ExtraSelection selection;
         QColor line_color = QColor(40,40,40);

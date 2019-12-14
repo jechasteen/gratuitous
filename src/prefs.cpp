@@ -72,6 +72,9 @@ void Prefs::set_defaults()
     // Line numbers
     m_prefs.setValue("editor/linenumbers", false);
 
+    // Highlight current line
+    m_prefs.setValue("editor/hightlight", false);
+
     // Default path, for file dialog open location
     m_prefs.setValue("path", get_default_path());
 
@@ -164,6 +167,11 @@ void Prefs::ui_editor()
     editor_linenumbers->setChecked(m_prefs.value("editor/linenumbers").value<bool>());
     editor_linenumbers->setObjectName("linenumbers");
     editor_booleans->addWidget(editor_linenumbers);
+
+    auto *editor_hightlight = new QCheckBox(tr("hightlight current line"));
+    editor_hightlight->setChecked(m_prefs.value("editor/highlight").value<bool>());
+    editor_hightlight->setObjectName("highlight");
+    editor_booleans->addWidget(editor_hightlight);
 
     auto *group_editor_tabstop = new QGroupBox(tr("tabstop"));
     auto *editor_tabstop_layout = new QHBoxLayout;
@@ -268,6 +276,7 @@ void Prefs::do_apply()
     set_font(m_group_font->findChild<QLineEdit*>()->font());
     m_prefs.setValue("editor/wordwrap", m_group_editor->findChild<QCheckBox*>("wordwrap")->isChecked());
     m_prefs.setValue("editor/linenumbers", m_group_editor->findChild<QCheckBox*>("linenumbers")->isChecked());
+    m_prefs.setValue("editor/highlight", m_group_editor->findChild<QCheckBox*>("highlight")->isChecked());
     m_prefs.setValue("editor/tabstop", m_group_editor->findChild<QSpinBox*>()->value());
 
     m_prefs.setValue("preview/width", m_group_preview->findChildren<QSpinBox*>()[0]->value());
