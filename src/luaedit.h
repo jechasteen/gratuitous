@@ -7,6 +7,7 @@
 
 #include <QAction>
 #include <QDebug>
+#include <QKeyEvent>
 #include <QSettings>
 #include <QString>
 #include <QPlainTextEdit>
@@ -31,11 +32,13 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
     void update_line_number_area_width(int new_block_count);
     void highlight_current_line();
     void update_line_number_area(const QRect &rect, int dy);
+    void add_new_line();
 
 private:
     bool load_from_file();

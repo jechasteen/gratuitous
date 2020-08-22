@@ -1,24 +1,13 @@
 # gratuitous
 
-gra·tu·i·tous /*ɡrəˈt(y)o͞oədəs*/
+gra·tu·i·tous `/*ɡrəˈt(y)o͞oədəs*/`
 
-1. uncalled for; lacking good reason; unwarranted.
-
-* e.g. a gratuitous insult
+1. uncalled for; lacking good reason; unwarranted. *e.g. a gratuitous insult*
 
 2. given or done free of charge.
 
 gratuitous is an IDE for awesome window manager configs and themes.
-The name is a play on the adjective names of other awesome libs (awful, beautiful, vicious)
-
-#### Why Qt?
-
-It started out with wanting to try c++.
-I wanted to use a library/framework and the Qt documentation is fantastic.
-
-The gratuitous idea started as a prototype written in JavaScript using Electron, [gratuitous-electron](github.com/jechasteen/gratuitous-electron).
-
-My 'ideal' idea of gratuitous would actually be a vim wrapper written using the awesome lua libs.
+The name is a play on the adjective names of the awesome libs (awful, beautiful, vicious)
 
 ## Features
 

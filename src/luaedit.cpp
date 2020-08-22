@@ -6,6 +6,7 @@
 #include <QFont>
 #include <QMessageBox>
 #include <QPainter>
+#include <QTextCursor>
 #include <QTextFormat>
 #include <QTextStream>
 
@@ -70,6 +71,26 @@ void LuaEdit::update_line_number_area(const QRect &rect, int dy)
     }
 }
 
+void LuaEdit::add_new_line()
+{
+    QTextCursor cursor;
+    QString line = textCursor().block().text();
+    QString space;
+    QChar c;
+    int size = line.size();
+
+    for (int i = 0; i < size; i++) {
+        c = line[i];
+        if (!c.isSpace()) {
+            space = line.left(i);
+            break;
+        }
+    }
+
+    insertPlainText("\n");
+    insertPlainText(space);
+}
+
 void LuaEdit::resizeEvent(QResizeEvent *event)
 {
     if (m_prefs.value("editor/linenumbers").value<bool>())
@@ -77,6 +98,15 @@ void LuaEdit::resizeEvent(QResizeEvent *event)
         QPlainTextEdit::resizeEvent(event);
         QRect cr = contentsRect();
         line_number_area->setGeometry(QRect(cr.left(), cr.top(), line_number_area_width(), cr.height()));
+    }
+}
+
+void LuaEdit::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key::Key_Enter || event->key() == Qt::Key::Key_Return) {
+        add_new_line();
+    } else {
+        QPlainTextEdit::keyPressEvent(event);
     }
 }
 
