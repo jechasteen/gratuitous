@@ -37,7 +37,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     quotationFormat.setFontWeight(QFont::Bold);
     const QList<QString> stringPatterns =
     {
-        QStringLiteral("\"[^\"]*\"")
+        QStringLiteral("[\"\'][^\"\']*[\"|\']")
     };
     for (const QString &pattern : stringPatterns)
     {
