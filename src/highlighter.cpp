@@ -35,9 +35,16 @@ Highlighter::Highlighter(QTextDocument *parent)
     // Strings
     quotationFormat.setForeground(Qt::darkYellow);
     quotationFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("\".*\""));
-    rule.format = quotationFormat;
-    highlightingRules.append(rule);
+    const QList<QString> stringPatterns =
+    {
+        QStringLiteral("\"[^\"]*\"")
+    };
+    for (const QString &pattern : stringPatterns)
+    {
+        rule.pattern = QRegularExpression(pattern);
+        rule.format = quotationFormat;
+        highlightingRules.append(rule);
+    }
 
     // Single-line comment
     singleLineCommentFormat.setForeground(Qt::gray);
